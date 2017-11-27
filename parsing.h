@@ -46,6 +46,9 @@ struct sphere_t {
   vector3_t specular_color;
   vector3_t position;
   double radius;
+  double reflectivity;
+  double refractivity;
+  double ior;
 };
 
 struct plane_t {
@@ -54,6 +57,9 @@ struct plane_t {
   vector3_t specular_color;
   vector3_t position;
   vector3_t normal;
+  double reflectivity;
+  double refractivity;
+  double ior;
 };
 
 struct light_t {

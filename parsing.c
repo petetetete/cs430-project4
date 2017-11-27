@@ -162,20 +162,27 @@ int parseSphere(sphere_t *sphere, char *line) {
 
   sphere->kind = OBJECT_KIND_SPHERE;
 
-  // Variables to parse in to
+  // Variables to parse into
   vector3_t diffuseColor = vector3_create(INFINITY, INFINITY, INFINITY);
   vector3_t specularColor = vector3_create(INFINITY, INFINITY, INFINITY);
   vector3_t position = vector3_create(INFINITY, INFINITY, INFINITY);
   double radius = INFINITY;
+  double reflectivity = INFINITY;
+  double refractivity = INFINITY;
+  double ior = INFINITY;
 
   // Try to find elements in line
   char *diffuseColorStart = strstr(line, "diffuse_color:");
   char *specularColorStart = strstr(line, "specular_color:");
   char *positionStart = strstr(line, "position:");
   char *radiusStart = strstr(line, "radius:");
+  char *reflectivityStart = strstr(line, "reflectivity:");
+  char *refractivityStart = strstr(line, "refractivity:");
+  char *iorStart = strstr(line, "ior:");
 
   if (diffuseColorStart == NULL || specularColorStart == NULL ||
-      positionStart == NULL || radiusStart == NULL) {
+      positionStart == NULL || radiusStart == NULL || iorStart == NULL ||
+      reflectivityStart == NULL || refractivityStart == NULL) {
     return INVALID_PARSE_LINE;
   }
 
@@ -187,6 +194,9 @@ int parseSphere(sphere_t *sphere, char *line) {
   sscanf(positionStart + 9, " [%lf , %lf , %lf],",
          &position[0], &position[1], &position[2]);
   sscanf(radiusStart + 7, "%lf,", &radius);
+  sscanf(reflectivityStart + 13, "%lf,", &reflectivity);
+  sscanf(refractivityStart + 13, "%lf,", &refractivity);
+  sscanf(iorStart + 4, "%lf,", &ior);
 
   // Catch invalid values
   if (diffuseColor[0] == INFINITY ||
@@ -198,7 +208,8 @@ int parseSphere(sphere_t *sphere, char *line) {
       position[0] == INFINITY ||
       position[1] == INFINITY ||
       position[2] == INFINITY ||
-      radius == INFINITY) {
+      radius == INFINITY || reflectivity == INFINITY ||
+      refractivity == INFINITY || ior == INFINITY) {
     return INVALID_PARSE_LINE;
   }
   else {
@@ -208,6 +219,9 @@ int parseSphere(sphere_t *sphere, char *line) {
     sphere->specular_color = specularColor;
     sphere->position = position;
     sphere->radius = radius;
+    sphere->reflectivity = reflectivity;
+    sphere->refractivity = refractivity;
+    sphere->ior = ior;
 
     return 0;
   }
@@ -218,19 +232,27 @@ int parsePlane(plane_t *plane, char *line) {
 
   plane->kind = OBJECT_KIND_PLANE;
 
-  // Variables to parse in to
+  // Variables to parse into
   vector3_t diffuseColor = vector3_create(INFINITY, INFINITY, INFINITY);
   vector3_t specularColor = vector3_create(INFINITY, INFINITY, INFINITY);
   vector3_t position = vector3_create(INFINITY, INFINITY, INFINITY);
   vector3_t normal = vector3_create(INFINITY, INFINITY, INFINITY);
+  double reflectivity = INFINITY;
+  double refractivity = INFINITY;
+  double ior = INFINITY;
 
   // Try to find elements in line
   char *diffuseColorStart = strstr(line, "diffuse_color:");
   char *specularColorStart = strstr(line, "specular_color:");
   char *positionStart = strstr(line, "position:");
   char *normalStart = strstr(line, "normal:");
+  char *reflectivityStart = strstr(line, "reflectivity:");
+  char *refractivityStart = strstr(line, "refractivity:");
+  char *iorStart = strstr(line, "ior:");
 
-  if (diffuseColorStart == NULL || positionStart == NULL || normalStart == NULL) {
+  if (diffuseColorStart == NULL || positionStart == NULL ||
+      normalStart == NULL || reflectivityStart == NULL ||
+      refractivityStart == NULL || iorStart == NULL) {
     return INVALID_PARSE_LINE;
   }
 
@@ -243,6 +265,9 @@ int parsePlane(plane_t *plane, char *line) {
          &position[0], &position[1], &position[2]);
   sscanf(normalStart + 7, " [%lf , %lf , %lf],",
          &normal[0], &normal[1], &normal[2]);
+  sscanf(reflectivityStart + 13, "%lf,", &reflectivity);
+  sscanf(refractivityStart + 13, "%lf,", &refractivity);
+  sscanf(iorStart + 4, "%lf,", &ior);
 
   // Catch invalid values
   if (diffuseColor[0] == INFINITY ||
@@ -256,16 +281,20 @@ int parsePlane(plane_t *plane, char *line) {
       position[2] == INFINITY ||
       normal[0] == INFINITY ||
       normal[1] == INFINITY ||
-      normal[2] == INFINITY) {
+      normal[2] == INFINITY || reflectivity == INFINITY ||
+      refractivity == INFINITY || ior == INFINITY) {
     return INVALID_PARSE_LINE;
   }
   else {
 
-    // Populate sphere
+    // Populate plane
     plane->diffuse_color = diffuseColor;
     plane->specular_color = specularColor;
     plane->position = position;
     plane->normal = normal;
+    plane->reflectivity = reflectivity;
+    plane->refractivity = refractivity;
+    plane->ior = ior;
 
     vector3_normalize(plane->normal);
 
