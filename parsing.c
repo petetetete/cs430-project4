@@ -202,8 +202,10 @@ int parseSphere(sphere_t *sphere, char *line) {
       position[0] == INFINITY ||
       position[1] == INFINITY ||
       position[2] == INFINITY ||
-      radius == INFINITY || reflectivity == INFINITY ||
-      refractivity == INFINITY || ior == INFINITY) {
+      radius == INFINITY ||
+      reflectivity == INFINITY || reflectivity < 0.0 || reflectivity > 1.0 ||
+      refractivity == INFINITY || refractivity < 0.0 || refractivity > 1.0 ||
+      (reflectivity + refractivity) > 1.0 || ior == INFINITY) {
     return INVALID_PARSE_LINE;
   }
   else {
@@ -275,8 +277,10 @@ int parsePlane(plane_t *plane, char *line) {
       position[2] == INFINITY ||
       normal[0] == INFINITY ||
       normal[1] == INFINITY ||
-      normal[2] == INFINITY || reflectivity == INFINITY ||
-      refractivity == INFINITY || ior == INFINITY) {
+      normal[2] == INFINITY ||
+      reflectivity == INFINITY || reflectivity < 0.0 || reflectivity > 1.0 ||
+      refractivity == INFINITY || refractivity < 0.0 || refractivity > 1.0 ||
+      (reflectivity + refractivity) > 1.0 || ior == INFINITY) {
     return INVALID_PARSE_LINE;
   }
   else {
