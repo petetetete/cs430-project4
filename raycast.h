@@ -16,7 +16,8 @@
 #define MAX_SCENE_LIGHTS 128
 #define FOCAL_LENGTH 1.0 // In world units
 #define EPSILON_OFFSET 0.000125
-#define MAX_RECURSION_LEVEL 5
+#define MAX_RECURSION_LEVEL 3
+#define DEFAULT_IOR 1.0
 
 // String constants
 #define USAGE_MESSAGE "\
@@ -52,12 +53,15 @@ double rayObjectIntersect(object_t **outObject, vector3_t origin,
  * @param  numObjects  number of objects in the world
  * @param  lights      array of light objects in the world
  * @param  numLights   number of lights in the world
- * @param  level       the current recursion level of the raycast
+ * @param  level       current recursion level of the raycast
+ * @param  extIor      index of refraction of the external medium
+ * @param  inObject    pointer to the object currently insidde of
  * @return             color vector of closest object intersected
  */
 vector3_t raycast(vector3_t origin, vector3_t direction,
-				  object_t **scene, int numObjects,
-				  light_t **lights, int numLights, int level);
+          object_t **scene, int numObjects,
+          light_t **lights, int numLights,
+          int level, double extIor, object_t *inObject);
 
 /**
  * Renders a PPM image given a particular scene and camera position.

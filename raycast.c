@@ -51,7 +51,8 @@ double rayObjectIntersect(object_t **outObject, vector3_t origin,
 
 vector3_t raycast(vector3_t origin, vector3_t direction,
                   object_t **scene, int numObjects,
-                  light_t **lights, int numLights, int level) {
+                  light_t **lights, int numLights,
+                  int level, double extIor, object_t *inObject) {
 
   if (level > MAX_RECURSION_LEVEL) {
     return vector3_create(0, 0, 0); // Void color
@@ -70,11 +71,11 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
   else {
     vector3_t tempVector = vector3_create(0, 0, 0); // Used in calculations
 
-    vector3_t reflectColor = vector3_create(0, 0, 0); // Reflection color
     vector3_t ovDirection = vector3_create(0, 0, 0);
     vector3_t intersect = vector3_create(0, 0, 0);
     vector3_t intersectOffset = vector3_create(0, 0, 0);
     vector3_t normal = vector3_create(0, 0, 0);
+    vector3_t reflectColor = vector3_create(0, 0, 0); // Reflection color
     vector3_t reflection = vector3_create(0, 0, 0);
     double illumination;
 
@@ -106,8 +107,39 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
     vector3_normalize(reflection);
 
     // Get reflection color from recursive calls
-    reflectColor = raycast(intersectOffset, reflection,
-                           scene, numObjects, lights, numLights, level + 1);
+    reflectColor = raycast(intersectOffset, reflection, scene, numObjects,
+                           lights, numLights, level + 1, extIor, NULL);
+
+
+
+
+
+
+    /* Refraction stuff */
+    vector3_t refractColor = vector3_create(0, 0, 0); // Refraction color
+    vector3_t refraction = vector3_create(0, 0, 0);
+    vector3_t tangent = vector3_create(0, 0, 0);
+
+    vector3_cross(tempVector, normal, ovDirection);
+    vector3_normalize(tempVector);
+    vector3_cross(tangent, tempVector, normal);
+
+    vector3_scale(tempVector, ovDirection, extIor / object->ior);
+    double sinPhi = vector3_dot(tempVector, tangent);
+    double cosPhi = sqrt(1 - pow(sinPhi, 2));
+
+    vector3_scale(refraction, normal, -cosPhi);
+    vector3_scale(tempVector, tangent, sinPhi);
+    vector3_add(refraction, refraction, tempVector);
+
+    refractColor = raycast(intersectOffset, refraction, scene, numObjects,
+                           lights, numLights, level + 1, object->ior,
+                           object == inObject ? NULL : object);
+
+
+
+
+
 
 
     /* Variables that DO change on a light by light basis */
@@ -166,20 +198,29 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
 
     // Calculate and clamp final color values
     color[0] = clampValue(illumination*color[0] +
-                          object->reflectivity*reflectColor[0], 0.0, 1.0);
+                          object->reflectivity*reflectColor[0] +
+                          object->refractivity*refractColor[0], 0.0, 1.0);
     color[1] = clampValue(illumination*color[1] +
-                          object->reflectivity*reflectColor[1], 0.0, 1.0);
+                          object->reflectivity*reflectColor[1] +
+                          object->refractivity*refractColor[1], 0.0, 1.0);
     color[2] = clampValue(illumination*color[2] +
-                          object->reflectivity*reflectColor[2], 0.0, 1.0);
+                          object->reflectivity*reflectColor[2] +
+                          object->refractivity*refractColor[2], 0.0, 1.0);
 
     // Clean up allocated memory
     free(tempVector);
-    free(reflectColor);
     free(ovDirection);
     free(intersect);
     free(intersectOffset);
     free(normal);
+    free(tangent);
+
+    free(reflectColor);
     free(reflection);
+
+    free(refractColor);
+    free(refraction);
+
     free(olDirection);
     free(diff);
     free(spec);
@@ -218,8 +259,8 @@ int renderImage(ppm_t *ppmImage, camera_t *camera,
       vector3_normalize(direction);
 
       // Get color from raycast
-      color = raycast(camera->position, direction,
-                      scene, numObjects, lights, numLights, 0);
+      color = raycast(camera->position, direction, scene, numObjects,
+                      lights, numLights, 1, DEFAULT_IOR, NULL);
 
       // Populate pixel with color data
       ppmImage->pixels[i*ppmImage->width + j].r = (int) (color[0] * 255);
