@@ -168,20 +168,21 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
     color[0] = clampValue(illumination*color[0] +
                           object->reflectivity*reflectColor[0], 0.0, 1.0);
     color[1] = clampValue(illumination*color[1] +
-                          object->reflectivity*reflectColor[0], 0.0, 1.0);
+                          object->reflectivity*reflectColor[1], 0.0, 1.0);
     color[2] = clampValue(illumination*color[2] +
-                          object->reflectivity*reflectColor[0], 0.0, 1.0);
+                          object->reflectivity*reflectColor[2], 0.0, 1.0);
 
     // Clean up allocated memory
     free(tempVector);
+    free(reflectColor);
+    free(ovDirection);
     free(intersect);
     free(intersectOffset);
-    free(olDirection);
-    free(ovDirection);
-    free(diff);
-    free(spec);
     free(normal);
     free(reflection);
+    free(olDirection);
+    free(diff);
+    free(spec);
     free(lReflection);
 
     return color;
