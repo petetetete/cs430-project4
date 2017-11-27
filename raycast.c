@@ -51,7 +51,11 @@ double rayObjectIntersect(object_t **outObject, vector3_t origin,
 
 vector3_t raycast(vector3_t origin, vector3_t direction,
                   object_t **scene, int numObjects,
-                  object_t **lights, int numLights) {
+                  object_t **lights, int numLights, int level) {
+
+  if (level > MAX_RECURSION_LEVEL) {
+    return vector3_create(0, 0, 0); // Void color
+  }
 
   // Find the intersection point with the nearest object
   object_t *object;
@@ -64,15 +68,73 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
 
   // Calculate color value
   else {
-    vector3_t color = vector3_create(0, 0, 0); // No ambient light
     vector3_t tempVector = vector3_create(0, 0, 0); // Used in calculations
+
+    vector3_t reflectColor = vector3_create(0, 0, 0); // Reflection color
+    vector3_t ovDirection = vector3_create(0, 0, 0);
+    vector3_t intersect = vector3_create(0, 0, 0);
+    vector3_t intersectOffset = vector3_create(0, 0, 0);
+    vector3_t normal = vector3_create(0, 0, 0);
+    vector3_t reflection = vector3_create(0, 0, 0);
+
+    vector3_t diffuseColor;
+    vector3_t specularColor;
+    double reflectivity;
+    double refractivity;
+    double illumination;
+
+    /* Calculate values that DO NOT change on a light by light basis */
+    vector3_scale(ovDirection, direction, -1);
+
+    // Get intersection point
+    vector3_scale(tempVector, direction, t);
+    vector3_add(intersect, tempVector, origin);
+
+    // Get object properties
+    if (object->kind == OBJECT_KIND_SPHERE) {
+      sphere_t *sphere = (sphere_t *) object;
+
+      diffuseColor = sphere->diffuse_color;
+      specularColor = sphere->specular_color;
+      reflectivity = sphere->reflectivity;
+      refractivity = sphere->refractivity;
+
+      vector3_sub(normal, intersect, sphere->position);
+      vector3_normalize(normal);
+    }
+    else if (object->kind == OBJECT_KIND_PLANE) {
+      plane_t *plane = (plane_t *) object;
+
+      diffuseColor = plane->diffuse_color;
+      specularColor = plane->specular_color;
+      reflectivity = plane->reflectivity;
+      refractivity = plane->refractivity;
+
+      vector3_copy(normal, plane->normal);
+    }
+
+    illumination = 1.0 - reflectivity - refractivity; // Get illumination scale
+
+    // Calculate the object intersect origin by shifting intersect off object
+    vector3_scale(tempVector, normal, EPSILON_OFFSET);
+    vector3_add(intersectOffset, intersect, tempVector);
+
+    // Calculate reflection vector
+    vector3_scale(tempVector, normal, 2*vector3_dot(ovDirection, normal));
+    vector3_sub(reflection, tempVector, ovDirection);
+    vector3_normalize(reflection);
+
+    // Get reflection color from recursive calls
+    reflectColor = raycast(intersectOffset, reflection,
+                           scene, numObjects, lights, numLights, level + 1);
+
+
+    /* Variables that DO change on a light by light basis */
+    vector3_t color = vector3_create(0, 0, 0); // No ambient light
 
     // Declare all variables to be used in light loop
     light_t *light;
-    vector3_t lIntersect = vector3_create(0, 0, 0);
-    vector3_t lIntersectOffset = vector3_create(0, 0, 0);
     vector3_t olDirection = vector3_create(0, 0, 0);
-    vector3_t ovDirection = vector3_create(0, 0, 0);
     double lDistance;
     double shadowObjectT;
 
@@ -80,48 +142,25 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
     double fang = 1;
     vector3_t diff = vector3_create(0, 0, 0);
     vector3_t spec = vector3_create(0, 0, 0);
-    vector3_t normal = vector3_create(0, 0, 0);
-    vector3_t reflection = vector3_create(0, 0, 0);
-
-    // Calculate values that do not change on a light by light vasis
-    vector3_scale(ovDirection, direction, -1);
+    vector3_t lReflection = vector3_create(0, 0, 0);
 
     // For each light in the world
     for (int i = 0; i < numLights; i++) {
 
       light = (light_t *) lights[i]; // Current light
 
-      // Get intersection point
-      vector3_scale(tempVector, direction, t);
-      vector3_add(lIntersect, tempVector, origin);
-
       // Get object to light vector and distance
-      vector3_sub(olDirection, light->position, lIntersect);
+      vector3_sub(olDirection, light->position, intersect);
       lDistance = vector3_mag(olDirection);
       vector3_scale(olDirection, olDirection, 1 / lDistance); // Normalize dir
 
-      // Calculate current object normal
-      switch (object->kind) {
-        case OBJECT_KIND_SPHERE:
-          vector3_sub(normal, lIntersect, ((sphere_t *) object)->position);
-          vector3_normalize(normal);
-          break;
-        case OBJECT_KIND_PLANE:
-          vector3_copy(normal, ((plane_t *) object)->normal);
-          break;
-      }
-
-      // Calculate reflection vector
+      // Calculate light reflection vector
       vector3_scale(tempVector, normal, 2*vector3_dot(olDirection, normal));
-      vector3_sub(reflection, tempVector, olDirection);
-      vector3_normalize(reflection);
-
-      // Calculate the object intersect origin by shifting intersect off object
-      vector3_scale(tempVector, normal, EPSILON_OFFSET);
-      vector3_add(lIntersectOffset, lIntersect, tempVector);
+      vector3_sub(lReflection, tempVector, olDirection);
+      vector3_normalize(lReflection);
 
       // Get the t value of an intersecting object that casts shadows 
-      shadowObjectT = rayObjectIntersect(NULL, lIntersectOffset, olDirection,
+      shadowObjectT = rayObjectIntersect(NULL, intersectOffset, olDirection,
                                          scene, numObjects);
 
       // Only color the object if there isn't an object any closer
@@ -132,20 +171,10 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
         fang = angularAttenuation(light, olDirection);
         
         // Calculate the diffuse and specular light contributions
-        switch (object->kind) {
-          case OBJECT_KIND_SPHERE:
-            diffuseReflection(diff, ((sphere_t *) object)->diffuse_color,
-                              light->color, normal, olDirection);
-            specularReflection(spec, ((sphere_t *) object)->specular_color,
-                               light->color, ovDirection, reflection, 20);
-            break;
-          case OBJECT_KIND_PLANE:
-            diffuseReflection(diff, ((plane_t *) object)->diffuse_color,
-                              light->color, normal, olDirection);
-            specularReflection(spec, ((plane_t *) object)->specular_color,
-                               light->color, ovDirection, reflection, 20);
-            break;
-        }
+        diffuseReflection(diff, diffuseColor, light->color, normal,
+                          olDirection);
+        specularReflection(spec, specularColor, light->color, ovDirection,
+                           lReflection, 20);
 
         // Add to color channels
         color[0] += frad * fang * (diff[0] + spec[0]);
@@ -154,21 +183,25 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
       }
     }
 
-    // Clamp final color values
-    color[0] = clampValue(color[0], 0.0, 1.0);
-    color[1] = clampValue(color[1], 0.0, 1.0);
-    color[2] = clampValue(color[2], 0.0, 1.0);
+    // Calculate and clamp final color values
+    color[0] = clampValue(illumination*color[0] +
+                          reflectivity*reflectColor[0], 0.0, 1.0);
+    color[1] = clampValue(illumination*color[1] +
+                          reflectivity*reflectColor[0], 0.0, 1.0);
+    color[2] = clampValue(illumination*color[2] +
+                          reflectivity*reflectColor[0], 0.0, 1.0);
 
     // Clean up allocated memory
     free(tempVector);
-    free(lIntersect);
-    free(lIntersectOffset);
+    free(intersect);
+    free(intersectOffset);
     free(olDirection);
     free(ovDirection);
     free(diff);
     free(spec);
     free(normal);
     free(reflection);
+    free(lReflection);
 
     return color;
   }
@@ -204,7 +237,7 @@ int renderImage(ppm_t *ppmImage, camera_t *camera,
 
       // Get color from raycast
       color = raycast(camera->position, direction,
-                      scene, numObjects, lights, numLights);
+                      scene, numObjects, lights, numLights, 0);
 
       // Populate pixel with color data
       ppmImage->pixels[i*ppmImage->width + j].r = (int) (color[0] * 255);
