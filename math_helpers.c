@@ -14,7 +14,7 @@ double angularAttenuation(light_t *light, vector3_t loDirection) {
   vector3_t tempOlDirection = vector3_create(0, 0, 0);
   vector3_scale(tempOlDirection, loDirection, -1);
 
-  if (light->light_kind != LIGHT_KIND_SPOT) {
+  if (light->kind != LIGHT_KIND_SPOT) {
     return 1.0;
   }
 

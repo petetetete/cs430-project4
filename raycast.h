@@ -16,7 +16,7 @@
 #define MAX_SCENE_LIGHTS 128
 #define FOCAL_LENGTH 1.0 // In world units
 #define EPSILON_OFFSET 0.000125
-#define MAX_RECURSION_LEVEL 3
+#define MAX_RECURSION_LEVEL 5
 
 // String constants
 #define USAGE_MESSAGE "\
@@ -57,7 +57,7 @@ double rayObjectIntersect(object_t **outObject, vector3_t origin,
  */
 vector3_t raycast(vector3_t origin, vector3_t direction,
 				  object_t **scene, int numObjects,
-				  object_t **lights, int numLights, int level);
+				  light_t **lights, int numLights, int level);
 
 /**
  * Renders a PPM image given a particular scene and camera position.
@@ -72,6 +72,6 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
  */
 int renderImage(ppm_t *ppmImage, camera_t *camera,
                 object_t **scene, int numObjects,
-                object_t **lights, int numLights);
+                light_t **lights, int numLights);
 
 #endif  // RAYCAST_H

@@ -4,9 +4,6 @@
 
 int parseCamera(camera_t *camera, char *line) {
 
-  // Set object kind
-  camera->kind = OBJECT_KIND_CAMERA;
-
   // Variables to parse in to
   vector3_t position = vector3_create(INFINITY, INFINITY, INFINITY); // Shared
   double width = 0;
@@ -54,9 +51,6 @@ int parseCamera(camera_t *camera, char *line) {
 
 
 int parseLight(light_t *light, char *line) {
-
-  // Set object kind
-  light->kind = OBJECT_KIND_LIGHT;
 
   // Variables to parse in to
   vector3_t position = vector3_create(INFINITY, INFINITY, INFINITY);
@@ -121,12 +115,12 @@ int parseLight(light_t *light, char *line) {
   
   // If light is a point light
   if (thetaStart == NULL || theta == 0) {
-    light->light_kind = LIGHT_KIND_POINT;
+    light->kind = LIGHT_KIND_POINT;
   }
 
   // If light is a spot light
   else {
-    light->light_kind = LIGHT_KIND_SPOT;
+    light->kind = LIGHT_KIND_SPOT;
 
     if (angularA0Start == NULL ||
         directionStart == NULL) {
@@ -305,12 +299,12 @@ int parsePlane(plane_t *plane, char *line) {
 
 // return NULL == error, otherwise return array of numObjects
 int *parseInput(camera_t *camera, object_t **scene,
-               object_t **lights, FILE *file) {
+                light_t **lights, FILE *file) {
 
   // Incrementers
   int *numObjects = malloc(sizeof(int)*2);
-  numObjects[0] = 0;
-  numObjects[1] = 0;
+  numObjects[0] = 0; // Total number of scene objects
+  numObjects[1] = 0; // Total number of scene lights
   int lineNumber = 1;
 
   int errorStatus = 0;
@@ -330,18 +324,16 @@ int *parseInput(camera_t *camera, object_t **scene,
       errorStatus = parseCamera(camera, line);
 
       // If no error, reset flag
-      if (errorStatus == 0) {
+      if (errorStatus == 0)
         cameraFound = 0;
-      }
     }
     else if (strcmp(objectType, "light") == 0) {
       light_t *light = malloc(sizeof(light_t));
       errorStatus = parseLight(light, line);
 
       // If no error, save object
-      if (errorStatus == 0) {
-        lights[numObjects[1]++] = (object_t *) light;
-      }
+      if (errorStatus == 0)
+        lights[numObjects[1]++] = (light_t *) light;
     }
 
     // Handle scene objects

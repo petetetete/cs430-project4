@@ -9,9 +9,8 @@
 
 // Define constants
 #define OBJECT_KIND_CAMERA 1
-#define OBJECT_KIND_LIGHT 2
-#define OBJECT_KIND_SPHERE 3
-#define OBJECT_KIND_PLANE 4
+#define OBJECT_KIND_SPHERE 2
+#define OBJECT_KIND_PLANE 3
 
 #define LIGHT_KIND_POINT 1
 #define LIGHT_KIND_SPOT 2
@@ -29,41 +28,35 @@ typedef struct sphere_t sphere_t;
 typedef struct plane_t plane_t;
 typedef struct light_t light_t;
 
-struct object_t {
-  int kind;
-};
 
 struct camera_t {
-  struct object_t;
   double width;
   double height;
   vector3_t position;
 };
 
-struct sphere_t {
-  struct object_t;
+struct object_t { // Parent class of visible scene objects
+  int kind;
   vector3_t diffuse_color;
   vector3_t specular_color;
   vector3_t position;
-  double radius;
   double reflectivity;
   double refractivity;
   double ior;
+};
+
+struct sphere_t {
+  struct object_t;
+  double radius;
 };
 
 struct plane_t {
   struct object_t;
-  vector3_t diffuse_color;
-  vector3_t specular_color;
-  vector3_t position;
   vector3_t normal;
-  double reflectivity;
-  double refractivity;
-  double ior;
 };
 
 struct light_t {
-  struct object_t;
+  int kind;
   vector3_t position;
   vector3_t color;
   double radial_a2;
@@ -72,7 +65,6 @@ struct light_t {
   double theta;
   double angular_a0;
   vector3_t direction;
-  int light_kind;
 };
 
 
@@ -123,6 +115,6 @@ int parsePlane(plane_t *plane, char *line);
  *                 NULL is an error
  */
 int *parseInput(camera_t *camera, object_t **scene,
-               object_t **lights, FILE *file);
+                light_t **lights, FILE *file);
 
 #endif  // PARSING_H

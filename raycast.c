@@ -51,7 +51,7 @@ double rayObjectIntersect(object_t **outObject, vector3_t origin,
 
 vector3_t raycast(vector3_t origin, vector3_t direction,
                   object_t **scene, int numObjects,
-                  object_t **lights, int numLights, int level) {
+                  light_t **lights, int numLights, int level) {
 
   if (level > MAX_RECURSION_LEVEL) {
     return vector3_create(0, 0, 0); // Void color
@@ -76,14 +76,11 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
     vector3_t intersectOffset = vector3_create(0, 0, 0);
     vector3_t normal = vector3_create(0, 0, 0);
     vector3_t reflection = vector3_create(0, 0, 0);
-
-    vector3_t diffuseColor;
-    vector3_t specularColor;
-    double reflectivity;
-    double refractivity;
     double illumination;
 
     /* Calculate values that DO NOT change on a light by light basis */
+    illumination = 1.0 - object->reflectivity - object->refractivity;
+
     vector3_scale(ovDirection, direction, -1);
 
     // Get intersection point
@@ -92,28 +89,12 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
 
     // Get object properties
     if (object->kind == OBJECT_KIND_SPHERE) {
-      sphere_t *sphere = (sphere_t *) object;
-
-      diffuseColor = sphere->diffuse_color;
-      specularColor = sphere->specular_color;
-      reflectivity = sphere->reflectivity;
-      refractivity = sphere->refractivity;
-
-      vector3_sub(normal, intersect, sphere->position);
+      vector3_sub(normal, intersect, ((sphere_t *) object)->position);
       vector3_normalize(normal);
     }
     else if (object->kind == OBJECT_KIND_PLANE) {
-      plane_t *plane = (plane_t *) object;
-
-      diffuseColor = plane->diffuse_color;
-      specularColor = plane->specular_color;
-      reflectivity = plane->reflectivity;
-      refractivity = plane->refractivity;
-
-      vector3_copy(normal, plane->normal);
+      vector3_copy(normal, ((plane_t *) object)->normal);
     }
-
-    illumination = 1.0 - reflectivity - refractivity; // Get illumination scale
 
     // Calculate the object intersect origin by shifting intersect off object
     vector3_scale(tempVector, normal, EPSILON_OFFSET);
@@ -171,10 +152,10 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
         fang = angularAttenuation(light, olDirection);
         
         // Calculate the diffuse and specular light contributions
-        diffuseReflection(diff, diffuseColor, light->color, normal,
+        diffuseReflection(diff, object->diffuse_color, light->color, normal,
                           olDirection);
-        specularReflection(spec, specularColor, light->color, ovDirection,
-                           lReflection, 20);
+        specularReflection(spec, object->specular_color, light->color,
+                           ovDirection, lReflection, 20);
 
         // Add to color channels
         color[0] += frad * fang * (diff[0] + spec[0]);
@@ -185,11 +166,11 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
 
     // Calculate and clamp final color values
     color[0] = clampValue(illumination*color[0] +
-                          reflectivity*reflectColor[0], 0.0, 1.0);
+                          object->reflectivity*reflectColor[0], 0.0, 1.0);
     color[1] = clampValue(illumination*color[1] +
-                          reflectivity*reflectColor[0], 0.0, 1.0);
+                          object->reflectivity*reflectColor[0], 0.0, 1.0);
     color[2] = clampValue(illumination*color[2] +
-                          reflectivity*reflectColor[0], 0.0, 1.0);
+                          object->reflectivity*reflectColor[0], 0.0, 1.0);
 
     // Clean up allocated memory
     free(tempVector);
@@ -211,7 +192,7 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
 // Actually creates and initializes the image, iterates over view plane
 int renderImage(ppm_t *ppmImage, camera_t *camera,
                 object_t **scene, int numObjects,
-                object_t **lights, int numLights) {
+                light_t **lights, int numLights) {
 
   // Iterate over every pixel in the would be image
   double pixHeight = camera->height/ppmImage->height;
@@ -274,7 +255,7 @@ int main(int argc, char *argv[]) {
   FILE *outputFH;
   camera_t *camera = malloc(sizeof(camera_t));
   object_t **scene = malloc(sizeof(object_t) * MAX_SCENE_OBJECTS);
-  object_t **lights = malloc(sizeof(object_t) * MAX_SCENE_LIGHTS);
+  light_t **lights = malloc(sizeof(light_t) * MAX_SCENE_LIGHTS);
   int *numObjects;
 
   // Create final ppmImage
