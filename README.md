@@ -21,14 +21,14 @@ The first two numbers represent width and height (respectively). `objects.csv` i
 
 ## Examples
 
-### Simple Ball & Plane Example [TODO]
+### Simple Ball & Plane Example
 ![Ball & Plane Image](examples/ball_plane.png)
 
 [Ball & Plane CSV](examples/ball_plane.csv) - (width: 400px, height: 400px)
 
 The above example features **2 spheres**, **a plane**, and **a point light**.
 
-### Fringe-Case Example [TODO]
+### Fringe-Case Example
 ![Fringe-Case Image](examples/fringe.png)
 
 [Fringe-Case CSV](examples/fringe.csv) - (width: 400px, height: 400px)

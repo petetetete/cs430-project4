@@ -111,11 +111,7 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
                            lights, numLights, level + 1, extIor, NULL);
 
 
-
-
-
-
-    /* Refraction stuff */
+    /* Refraction calculation */
     vector3_t refractColor = vector3_create(0, 0, 0); // Refraction color
     vector3_t refraction = vector3_create(0, 0, 0);
     vector3_t tangent = vector3_create(0, 0, 0);
@@ -135,11 +131,6 @@ vector3_t raycast(vector3_t origin, vector3_t direction,
     refractColor = raycast(intersectOffset, refraction, scene, numObjects,
                            lights, numLights, level + 1, object->ior,
                            object == inObject ? NULL : object);
-
-
-
-
-
 
 
     /* Variables that DO change on a light by light basis */
