@@ -1,8 +1,8 @@
-# Project 3 - Illumination
+# Project 4 - Recursive Raytracing
 
 A raycaster written in C with a simple illumination model.
 
-This project is an extension of a [previous raycaster](https://github.com/petetetete/cs430-project2) with added attenuation and reflection calculations. This program still uses a CSV scene description file and simple command line parameters.
+This project is an extension of a [previous raycaster](https://github.com/petetetete/cs430-project3) with added recursive reflection and refraction of objects.
 
 ## Usage
 
@@ -21,22 +21,23 @@ The first two numbers represent width and height (respectively). `objects.csv` i
 
 ## Examples
 
-### Simple Ball & Plane Example
+### Simple Ball & Plane Example [TODO]
 ![Ball & Plane Image](examples/ball_plane.png)
 
 [Ball & Plane CSV](examples/ball_plane.csv) - (width: 400px, height: 400px)
 
-The above example features **a sphere**, **a plane**, and **a point light** and accurately calculates the illumination of said scene.
+The above example features **2 spheres**, **a plane**, and **a point light**.
 
-### Fringe-Case Example
+### Fringe-Case Example [TODO]
 ![Fringe-Case Image](examples/fringe.png)
 
 [Fringe-Case CSV](examples/fringe.csv) - (width: 400px, height: 400px)
 
-The above example features **4 spheres**, **2 planes**, **2 point lights**, and **1 spot light**. Two of the spheres and the two planes are intersecting, and one of the spheres is far closer to the camera than the others. This example demonstrates how the illumination model responds to strange scenes.
+The above example features **4 spheres**, **2 planes**, **2 point lights**, and **1 spot light**. Two of the spheres and the two planes are intersecting, and one of the spheres is far closer to the camera than the others.
 
 ## Known Issues/Strange Behavior
-* None (so far)
+* Refraction appears to be non-functional (or my test cases do not demonstrate it).
+* Refraction calculation does not properly preserve the index of refraction through multiple objects.
 
 ## Author
 Peter Huettl - [ph289@nau.edu](mailto:ph289@nau.edu)
